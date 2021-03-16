@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    container_name: db
+    environment: 
+      - MYSQL_DATABASE=desafiodb
+      - MYSQL_ROOT_PASSWORD=root
+    tty: true
+    volumes:
+      - ${PWD}/mysql:/var/lib/mysql
+      - ./dump:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+    networks:
+      - net-app
+  
+  nodeserver:
+    build:
+      context: ./app
+    container_name: server-app
+    ports:
+      - "3000:3000"
+    networks: 
+      - net-app
+    depends_on:
+      - db
+  
+  nginx:
+    restart: always
+    build:
+      context: ./nginx
+    ports:
+      - "8080:80"
+    depends_on: 
+      - db
+      - nodeserver
+    networks:
+      - net-app
+
+networks:
+  net-app:
+    driver: bridge
